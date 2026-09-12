@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: foodhub_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-foodhub_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-securepassword123}
+      POSTGRES_DB: ${POSTGRES_DB:-foodhub_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-foodhub_user} -d ${POSTGRES_DB:-foodhub_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: foodhub_backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-foodhub_user}:${POSTGRES_PASSWORD:-securepassword123}@db:5432/${POSTGRES_DB:-foodhub_db}
+      SECRET_KEY: ${SECRET_KEY:-super-secret-jwt-key-foodhub-2026-secure-token-998811}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-mock-key}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-mock-secret}
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-foodhub-restaurant-assets}
+      AWS_CLOUDWATCH_LOG_GROUP: ${AWS_CLOUDWATCH_LOG_GROUP:-/foodhub/api-logs}
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend_uploads:/app/backend/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: foodhub_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data:
+  backend_uploads:

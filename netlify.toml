@@ -1,0 +1,19 @@
+# Netlify Configuration for FoodHub Frontend
+[build]
+  base = "frontend"
+  publish = "dist"
+  command = "npm run build"
+
+# SPA Fallback: Route all client navigation to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Optional API proxy: If you deploy your backend to Render/Railway/EC2,
+# uncomment and set your backend domain below:
+# [[redirects]]
+#   from = "/api/*"
+#   to = "https://your-fastapi-backend.onrender.com/api/:splat"
+#   status = 200
+#   force = true
