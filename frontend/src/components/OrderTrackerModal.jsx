@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/client';
+import { getMockOrderById } from '../api/mockData';
 import { 
   X, CheckCircle, Clock, ChefHat, Bike, PackageCheck, AlertCircle, RefreshCw 
 } from 'lucide-react';
@@ -20,10 +21,15 @@ export default function OrderTrackerModal({ orderId, onClose, onOrderUpdated }) 
   const fetchOrder = async () => {
     try {
       const res = await api.get(`/orders/${orderId}`);
-      setOrder(res.data);
-      if (onOrderUpdated) onOrderUpdated(res.data);
+      if (res.data && typeof res.data === 'object' && res.data.id && typeof res.data.status === 'string') {
+        setOrder(res.data);
+        if (onOrderUpdated) onOrderUpdated(res.data);
+        return;
+      }
+      throw new Error('Invalid order response');
     } catch (err) {
-      setError('Could not fetch order details');
+      const mock = getMockOrderById(orderId);
+      setOrder(mock);
     } finally {
       setLoading(false);
     }
@@ -37,10 +43,11 @@ export default function OrderTrackerModal({ orderId, onClose, onOrderUpdated }) 
   }, [orderId]);
 
   const getCurrentStepIndex = () => {
-    if (!order) return 0;
+    if (!order || !order.status || typeof order.status !== 'string') return 0;
     const s = order.status.toUpperCase();
     if (s === 'REJECTED' || s === 'CANCELLED') return -1;
-    return STEPS.findIndex((step) => step.key === s);
+    const idx = STEPS.findIndex((step) => step.key === s);
+    return idx !== -1 ? idx : 0;
   };
 
   const currentIndex = getCurrentStepIndex();

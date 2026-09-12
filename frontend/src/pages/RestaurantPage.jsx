@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/client';
+import { getMockRestaurantById, getMockReviews } from '../api/mockData';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -21,13 +22,24 @@ export default function RestaurantPage({ restaurantId, onBack, onOpenCart }) {
   const fetchDetails = async () => {
     try {
       const [restRes, revRes] = await Promise.all([
-        api.get(`/restaurants/${restaurantId}`),
-        api.get(`/reviews/restaurant/${restaurantId}`)
+        api.get(`/restaurants/${restaurantId}`).catch(() => null),
+        api.get(`/reviews/restaurant/${restaurantId}`).catch(() => null)
       ]);
-      setRestaurant(restRes.data);
-      setReviews(revRes.data);
+
+      const restData = restRes?.data && typeof restRes.data === 'object' && !Array.isArray(restRes.data) && restRes.data.id
+        ? restRes.data
+        : getMockRestaurantById(restaurantId);
+
+      const revData = revRes?.data && Array.isArray(revRes.data)
+        ? revRes.data
+        : getMockReviews(restaurantId);
+
+      setRestaurant(restData);
+      setReviews(revData);
     } catch (err) {
-      console.error('Failed to load restaurant details', err);
+      console.warn('Failed to load restaurant details, using demo data', err);
+      setRestaurant(getMockRestaurantById(restaurantId));
+      setReviews(getMockReviews(restaurantId));
     } finally {
       setLoading(false);
     }

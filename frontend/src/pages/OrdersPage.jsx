@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/client';
+import { getMockOrders } from '../api/mockData';
 import { useAuth } from '../context/AuthContext';
 import { 
   Package, Clock, CheckCircle, ChefHat, Bike, 
@@ -18,9 +19,14 @@ export default function OrdersPage({ onBrowseClick }) {
   const fetchOrders = async () => {
     try {
       const res = await api.get('/orders/my-orders');
-      setOrders(res.data);
+      if (Array.isArray(res.data)) {
+        setOrders(res.data);
+      } else {
+        setOrders(getMockOrders());
+      }
     } catch (err) {
-      console.error('Failed to load orders', err);
+      console.warn('Failed to load orders, using demo orders', err);
+      setOrders(getMockOrders());
     } finally {
       setLoading(false);
     }

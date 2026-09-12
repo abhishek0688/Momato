@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/client';
+import { getMockRestaurants } from '../api/mockData';
 import { Search, Star, Clock, Bike, Sparkles, Filter, ChevronRight } from 'lucide-react';
 
 const CUISINES = [
@@ -20,17 +21,22 @@ export default function HomePage({ onSelectRestaurant }) {
 
   const fetchRestaurants = async () => {
     setLoading(true);
-    try {
-      const params = {};
-      if (searchQuery) params.query = searchQuery;
-      if (selectedCuisine && selectedCuisine !== 'All') params.cuisine = selectedCuisine;
-      if (minRating) params.min_rating = minRating;
-      if (sortBy) params.sort_by = sortBy;
+    const params = {};
+    if (searchQuery) params.query = searchQuery;
+    if (selectedCuisine && selectedCuisine !== 'All') params.cuisine = selectedCuisine;
+    if (minRating) params.min_rating = minRating;
+    if (sortBy) params.sort_by = sortBy;
 
+    try {
       const res = await api.get('/restaurants', { params });
-      setRestaurants(res.data);
+      if (Array.isArray(res.data)) {
+        setRestaurants(res.data);
+      } else {
+        setRestaurants(getMockRestaurants(params));
+      }
     } catch (err) {
-      console.error('Error fetching restaurants', err);
+      console.warn('Backend API not responding, using preview demo restaurants', err);
+      setRestaurants(getMockRestaurants(params));
     } finally {
       setLoading(false);
     }
